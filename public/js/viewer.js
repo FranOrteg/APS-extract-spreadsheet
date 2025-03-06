@@ -23,15 +23,24 @@ let viewer;
 
 function showModel(urn) {
   const options = {
-    env: 'AutodeskProduction',
+    env: 'AutodeskProduction2',   // o 'AutodeskProduction', según el caso
+    api: 'derivativeV2',         // fuerza a usar la ruta V2 (ACC/ADP)
+    useADP: true,                // activa ADP
     getAccessToken: getAccessToken
   };
+
   Autodesk.Viewing.Initializer(options, function () {
-    viewer = new Autodesk.Viewing.Private.GuiViewer3D(document.getElementById('viewer'), {});
+    // Opcional: ver mensajes debug en consola
+    Autodesk.Viewing.Private.logger.setLevel(0);
+
+    viewer = new Autodesk.Viewing.GuiViewer3D(document.getElementById('viewer'));
     viewer.start();
+
     Autodesk.Viewing.Document.load('urn:' + urn, onDocumentLoadSuccess, onDocumentLoadFailure);
   });
 }
+
+
 
 function onDocumentLoadSuccess(doc) {
   const node = doc.getRoot().getDefaultGeometry();

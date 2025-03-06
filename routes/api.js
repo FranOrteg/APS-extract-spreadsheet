@@ -35,25 +35,28 @@ router.get('/api/auth/token', async function (req, res, next) {
 });
 
 router.get('/models', async function (req, res) {
-  let results = [];
-  const objects = await listObjects();
-  for (const obj of objects) {
-    if (obj.objectKey.endsWith('.rvt')) {
-      results.push({
-        id: obj.objectKey.split('.')[0],
-        label: obj.objectKey,
-        urn: obj.objectId.toBase64()
-      });
+  res.json([
+    {
+      id: "my-revit-model",
+      label: "My Revit Model",
+      urn: process.env.APS_URN
     }
-  }
-  res.json(results);
+  ]);
 });
 
-router.get('/initialsetup', async function (req, res) {
-  const buff = fs.readFileSync(path.join(__dirname, '..', 'samples', 'rac_advanced_sample_project.rvt'));
-  const obj = await data.uploadObject(config.bucket, 'racadvanced.rvt', 'application/octet-stream', buff);
-  const job = await deriv.submitJob(obj.objectId.toBase64(), [{ type: 'svf', views: ['2d', '3d'] }]);
-  res.json(job);
+router.get('/translate', async (req, res) => {
+  const { translateObject, getInternalToken } = require('../services/aps.js');
+  const urn = process.env.APS_URN; // tu URN actual
+  try {
+      const job = await translateObject(urn);
+      res.json(job);
+  } catch (err) {
+      console.error(err);
+      res.status(500).json(err);
+  }
 });
+
+
+
 
 module.exports = router;
