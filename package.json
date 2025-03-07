@@ -8,7 +8,7 @@
     "url": "git://github.com/autodesk-platform-services/aps-extract-spreadsheet"
   },
   "scripts": {
-    "start": "node start.js"
+    "dev": "node start.js"
   },
   "author": "APS Partner Development",
   "license": "MIT",
