@@ -65,6 +65,7 @@ service.translateObject = async (urn, rootFilename) => {
       }]
     }
   });
+  console.log("job result", job.result);
   return job.result;
 };
 

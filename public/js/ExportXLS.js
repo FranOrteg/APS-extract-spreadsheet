@@ -1,4 +1,4 @@
-/////////////////////////////////////////////////////////////////////
+/* /////////////////////////////////////////////////////////////////////
 // Copyright (c) Autodesk, Inc. All rights reserved
 // Written by APS Partner Development
 //
@@ -65,6 +65,7 @@ var ExportXLS = {
     var fileName = decodeURIComponent(atob(urn).replace(/^.*[\\\/]/, '')) + '.xlsx';
     if (fileName.indexOf('.rvt') == -1) {
       if (status) status(true, 'Not a Revit file, aborting.');
+      console.log("Decodificado: " + decodeURIComponent(atob(urn)));
       return;
     }
 
@@ -237,4 +238,74 @@ function s2ab(s) {
   var view = new Uint8Array(buf);
   for (var i = 0; i != s.length; ++i) view[i] = s.charCodeAt(i) & 0xFF;
   return buf;
+} */
+
+const XLSX = require('xlsx');
+const fs = require('fs');
+
+// Leer los archivos JSON generados por curl
+const hierarchyPath = './../json/hierarchy.json';
+const propertiesPath = './../json/properties.json';
+
+// Verificar si los archivos existen antes de continuar
+if (!fs.existsSync(hierarchyPath) || !fs.existsSync(propertiesPath)) {
+    console.error("❌ Error: No se encuentran los archivos JSON en la carpeta json/");
+    process.exit(1);
 }
+
+// Leer los archivos JSON
+const hierarchy = JSON.parse(fs.readFileSync(hierarchyPath));
+const properties = JSON.parse(fs.readFileSync(propertiesPath));
+
+// Mapeo de propiedades por ID de objeto
+const propsById = {};
+properties.data.collection.forEach(item => {
+    propsById[item.objectid] = item.properties;
+});
+
+// Lista para almacenar todas las filas del Excel
+const rows = [];
+
+// Obtener todas las propiedades disponibles (dinámicamente)
+const allProperties = new Set(["Object ID", "Name"]); // Propiedades básicas
+
+// Recorrer los objetos para descubrir todas las claves de propiedades
+properties.data.collection.forEach(obj => {
+    for (const category in obj.properties) {
+        for (const prop in obj.properties[category]) {
+            allProperties.add(`${category} - ${prop}`); // Formato "Categoría - Propiedad"
+        }
+    }
+});
+
+// Convertir el Set a un array ordenado
+const headers = Array.from(allProperties);
+rows.push(headers); // Agregar los encabezados como la primera fila
+
+// Recorrer los objetos en la jerarquía y extraer todas las propiedades
+hierarchy.data.objects[0].objects.forEach(obj => {
+    const objProps = propsById[obj.objectid] || {};
+    const row = [];
+
+    // Agregar ID y Nombre (columnas básicas)
+    row.push(obj.objectid, obj.name);
+
+    // Agregar las demás propiedades en el orden de los encabezados
+    headers.slice(2).forEach(prop => {
+        const [category, property] = prop.split(" - "); // Separar "Categoría - Propiedad"
+        row.push(objProps[category]?.[property] || ""); // Agregar valor o vacío si no existe
+    });
+
+    rows.push(row);
+});
+
+// Crear una hoja de Excel con los datos obtenidos
+const ws = XLSX.utils.aoa_to_sheet(rows);
+const workbook = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(workbook, ws, "Revit Properties");
+
+// Guardar el Excel
+XLSX.writeFile(workbook, 'Revit_Properties.xlsx');
+
+console.log("✅ Archivo 'Revit_Properties.xlsx' generado correctamente con todas las propiedades posibles.");
+  

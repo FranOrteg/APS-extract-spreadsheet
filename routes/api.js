@@ -39,7 +39,7 @@ router.get('/models', async function (req, res) {
     {
       id: "my-revit-model",
       label: "My Revit Model",
-      urn: process.env.APS_URN
+      urn: "urn:" + process.env.APS_URN
     }
   ]);
 });

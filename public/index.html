@@ -32,17 +32,19 @@
     var sampleURN;
 
     // wait until the document is ready...
-    $(document).ready(function () {
-      jQuery.ajax({
-        url: '/models',
-        success: function (models) {
-          if (models) {
-            $('#downloadExcel').click(downloadExcel);
-            sampleURN = models[0].urn;
-            showModel(sampleURN);
-          }
+    $.ajax({
+      url: '/models',
+      success: function (models) {
+        if (models && models.length > 0) {
+          const sampleURN = models[0].urn;
+          showModel(sampleURN); // para el Viewer
+          $('#downloadExcel').click(function(){
+            getAccessToken(function(token){
+              ExportXLS.downloadXLSX(sampleURN, token, statusCallback);
+            });
+          });
         }
-      });
+      }
     });
 
     // this will prepare and download the XLS file
